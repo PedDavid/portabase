@@ -265,7 +265,11 @@ export function channelItemHandlers(kind: ChannelKind) {
                     const parsed = (kind === "storage" ? StorageChannelFormSchema : NotificationChannelFormSchema)
                         .safeParse(candidate);
                     if (!parsed.success) {
-                        return jsonError(parsed.error.issues[0]?.message ?? "Invalid config", 422);
+                        const issue = parsed.error.issues[0];
+                        return jsonError(
+                            issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid config",
+                            422
+                        );
                     }
                     candidate.config = parsed.data.config;
                 }
@@ -340,7 +344,12 @@ export function channelTestHandler(kind: ChannelKind) {
                 );
 
             return NextResponse.json({
-                data: result.success ? {success: true} : {success: false, error: result.error ?? "Test failed"},
+                data: result.success
+                    ? {success: true}
+                    : {
+                        success: false,
+                        error: result.error ?? (typeof result.response === "string" ? result.response : "Test failed"),
+                    },
             });
         } catch (error) {
             log.error({error}, `Error in POST /api/v1/${kind}-channels/[id]/test`);

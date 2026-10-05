@@ -2,6 +2,7 @@ import {and, eq, isNull} from "drizzle-orm";
 import {db} from "@/db";
 import * as drizzleDb from "@/db";
 import {RetentionPolicy} from "@/db/schema/07_database";
+import {withUpdatedAt} from "@/db/utils";
 import {RetentionSettings} from "@/features/database/schemas/retention-policy.schema";
 import {PolicyScope, scopeOwner} from "@/features/database/schemas/policy-scope.schema";
 
@@ -39,7 +40,7 @@ export async function upsertRetentionPolicyService(
     if (existing) {
         const [updated] = await db
             .update(drizzleDb.schemas.retentionPolicy)
-            .set(values)
+            .set(withUpdatedAt(values))
             .where(retentionOwnerWhere(scope))
             .returning();
         return updated;
