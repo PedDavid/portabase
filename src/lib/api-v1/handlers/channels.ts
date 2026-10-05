@@ -43,8 +43,8 @@ type GuardResult<T> =
     | { ok: false; response: NextResponse };
 
 const KIND = {
-    storage: {label: "Storage channel", capability: "canManageStorages"},
-    notification: {label: "Notification channel", capability: "canManageNotifications"},
+    storage: {capability: "canManageStorages"},
+    notification: {capability: "canManageNotifications"},
 } as const;
 
 function jsonError(message: string, status: number) {
