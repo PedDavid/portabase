@@ -77,7 +77,7 @@ export function registerPolicyRoutes(registry: OpenAPIRegistry) {
         content: {
           "application/json": {
             schema: z.object({
-              backupPolicy: z
+              schedule: z
                 .string()
                 .describe("A valid cron expression, or \"\" to clear the schedule"),
             }),

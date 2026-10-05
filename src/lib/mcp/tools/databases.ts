@@ -82,14 +82,14 @@ export function registerDatabaseTools(server: McpServer, apiKey: string) {
     "Set or clear a database's backup schedule. Provide a cron expression, or an empty string to clear it (which also drops the retention policy).",
     {
       id: z.string().describe("Database ID"),
-      backupPolicy: z
+      schedule: z
         .string()
         .describe("A valid cron expression, or an empty string to clear the schedule"),
     },
-    async ({ id, backupPolicy }) => {
+    async ({ id, schedule }) => {
       const result = await apiV1Fetch(
         `/api/v1/databases/${id}/backup-policy`,
-        { method: "PUT", body: JSON.stringify({ backupPolicy }) },
+        { method: "PUT", body: JSON.stringify({ schedule }) },
         apiKey,
       );
       return result.ok ? ok(result.data) : err(result.error);
