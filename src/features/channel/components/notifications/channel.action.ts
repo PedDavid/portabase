@@ -2,13 +2,14 @@
 
 import { z } from "zod";
 import { ServerActionResult } from "@/types/action-type";
-import * as drizzleDb from "@/db";
 import { userAction } from "@/lib/safe-actions/actions";
 import { NotificationChannel } from "@/db/schema/09_notification-channel";
-import { db } from "@/db";
-import { and, eq } from "drizzle-orm";
-import { withUpdatedAt } from "@/db/utils";
 import { NotificationChannelFormSchema } from "@/features/channel/schemas/channel-form.schema";
+import {
+  createNotificationChannelService,
+  deleteNotificationChannelService,
+  updateNotificationChannelService,
+} from "@/features/channel/services/channel.service";
 
 export const addNotificationChannelAction = userAction
   .inputSchema(
@@ -23,25 +24,10 @@ export const addNotificationChannelAction = userAction
     }): Promise<ServerActionResult<NotificationChannel>> => {
       const { organizationId, data } = parsedInput;
       try {
-        const [channel] = await db
-          .insert(drizzleDb.schemas.notificationChannel)
-          .values({
-            provider: data.provider,
-            name: data.name,
-            config: data.config,
-            enabled: data.enabled ?? true,
-            organizationId: organizationId ?? null,
-          })
-          .returning();
-
-        if (organizationId) {
-          await db
-            .insert(drizzleDb.schemas.organizationNotificationChannel)
-            .values({
-              organizationId,
-              notificationChannelId: channel.id,
-            });
-        }
+        const channel = await createNotificationChannelService(
+          data,
+          organizationId ?? null,
+        );
 
         return {
           success: true,
@@ -83,31 +69,10 @@ export const removeNotificationChannelAction = userAction
       const { organizationId, notificationChannelId } = parsedInput;
 
       try {
-        if (organizationId) {
-          await db
-            .delete(drizzleDb.schemas.organizationNotificationChannel)
-            .where(
-              and(
-                eq(
-                  drizzleDb.schemas.organizationNotificationChannel
-                    .organizationId,
-                  organizationId,
-                ),
-                eq(
-                  drizzleDb.schemas.organizationNotificationChannel
-                    .notificationChannelId,
-                  notificationChannelId,
-                ),
-              ),
-            );
-        }
-
-        const [deletedChannel] = await db
-          .delete(drizzleDb.schemas.notificationChannel)
-          .where(
-            eq(drizzleDb.schemas.notificationChannel.id, notificationChannelId),
-          )
-          .returning();
+        const deletedChannel = await deleteNotificationChannelService(
+          notificationChannelId,
+          organizationId,
+        );
 
         if (!deletedChannel) {
           return {
@@ -160,18 +125,7 @@ export const updateNotificationChannelAction = userAction
       const { id, data } = parsedInput;
 
       try {
-        const [channel] = await db
-          .update(drizzleDb.schemas.notificationChannel)
-          .set(
-            withUpdatedAt({
-              provider: data.provider,
-              name: data.name,
-              config: data.config,
-              enabled: data.enabled ?? true,
-            }),
-          )
-          .where(eq(drizzleDb.schemas.notificationChannel.id, id))
-          .returning();
+        const channel = (await updateNotificationChannelService(id, data))!;
 
         return {
           success: true,

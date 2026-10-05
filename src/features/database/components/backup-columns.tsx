@@ -12,7 +12,7 @@ import {formatBytes, formatDuration} from "@/utils/text";
 import {DatabaseActionsCell} from "@/features/database/components/backup-actions-cell";
 import { Badge as BadgeC } from "@/components/ui/badge";
 import { CountBadge } from "@/components/common/count-badge";
-import {backupOnly} from "@/features/database/components/database-tabs";
+import {backupOnly} from "@/features/database/schemas/channels-policy.schema";
 import {LogsModalTrigger} from "@/features/logs/components/logs-modal-trigger";
 import {summarizePresence} from "@/features/database/utils/backup-presence.logic";
 import {useBackupModal} from "@/features/database/components/backup-modal-context";

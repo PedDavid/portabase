@@ -4,22 +4,13 @@ import {z} from "zod";
 import {ServerActionResult} from "@/types/action-type";
 import {db} from "@/db";
 import * as drizzleDb from "@/db";
-import {and, eq, inArray, isNull} from "drizzle-orm";
+import {and, eq, inArray} from "drizzle-orm";
 import {withUpdatedAt} from "@/db/utils";
 import {AlertPolicy} from "@/db/schema/10_alert-policy";
 import {PolicySchema} from "@/features/database/schemas/channels-policy.schema";
 import {StoragePolicy} from "@/db/schema/13_storage-policy";
-import {PolicyScope, PolicyScopeSchema, scopeOwner} from "@/features/database/schemas/policy-scope.schema";
-
-const alertOwnerWhere = (scope: PolicyScope) =>
-    scope.type === "database"
-        ? and(eq(drizzleDb.schemas.alertPolicy.databaseId, scope.id), isNull(drizzleDb.schemas.alertPolicy.projectId))
-        : and(eq(drizzleDb.schemas.alertPolicy.projectId, scope.id), isNull(drizzleDb.schemas.alertPolicy.databaseId));
-
-const storageOwnerWhere = (scope: PolicyScope) =>
-    scope.type === "database"
-        ? and(eq(drizzleDb.schemas.storagePolicy.databaseId, scope.id), isNull(drizzleDb.schemas.storagePolicy.projectId))
-        : and(eq(drizzleDb.schemas.storagePolicy.projectId, scope.id), isNull(drizzleDb.schemas.storagePolicy.databaseId));
+import {PolicyScopeSchema, scopeOwner} from "@/features/database/schemas/policy-scope.schema";
+import {alertOwnerWhere, storageOwnerWhere} from "@/features/database/services/channels-policy.service";
 
 
 export const createAlertPoliciesAction = userAction
