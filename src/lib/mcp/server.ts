@@ -5,6 +5,7 @@ import {registerDatabaseTools} from "./tools/databases";
 import {registerBackupTools} from "./tools/backups";
 import {registerOrganizationTools} from "./tools/organizations";
 import {registerProjectTools} from "./tools/projects";
+import {registerPolicyTools} from "./tools/policies";
 
 export function createPortabaseMcpServer(
     _ctx: ApiKeyContext,
@@ -20,6 +21,7 @@ export function createPortabaseMcpServer(
     registerAgentTools(server, apiKey);
     registerDatabaseTools(server, apiKey);
     registerBackupTools(server, apiKey);
+    registerPolicyTools(server, apiKey);
 
     return server;
 }
