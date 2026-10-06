@@ -1,10 +1,12 @@
 import { z } from "zod";
+import { BackupLabelFilterSchema } from "@/features/database/schemas/backup-labels.schema";
 
 export const FetchBackupsSchema = z.object({
     databaseId: z.string(),
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(100).default(20),
     filter: z.enum(["available", "deleted"]).optional(),
+    labelFilters: z.array(BackupLabelFilterSchema).optional(),
     sorting: z.any().optional(),
 });
 export type FetchBackupsSchema = z.infer<typeof FetchBackupsSchema>;

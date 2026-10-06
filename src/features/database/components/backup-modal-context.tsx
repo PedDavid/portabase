@@ -3,7 +3,7 @@
 import {createContext, useContext, useState, ReactNode} from "react";
 import {BackupWith} from "@/db/schema/07_database";
 
-export type DatabaseActionKind = "restore" | "download" | "delete" | "presence";
+export type DatabaseActionKind = "restore" | "download" | "delete" | "presence" | "labels";
 
 export function getBackupActionTextBasedOnActionKind(kind: DatabaseActionKind) {
     switch (kind) {
@@ -15,6 +15,8 @@ export function getBackupActionTextBasedOnActionKind(kind: DatabaseActionKind) {
             return "Delete";
         case "presence":
             return "Storage status";
+        case "labels":
+            return "Edit labels";
         default:
             return "Unknown";
     }

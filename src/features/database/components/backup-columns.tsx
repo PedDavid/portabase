@@ -18,6 +18,8 @@ import {summarizePresence} from "@/features/database/utils/backup-presence.logic
 import {useBackupModal} from "@/features/database/components/backup-modal-context";
 import {Button} from "@/components/ui/button";
 import {HardDrive} from "lucide-react";
+import {BackupLabelChips} from "@/features/database/components/backup-label-chips";
+import type {BackupLabelFilter} from "@/features/database/schemas/backup-labels.schema";
 
 function StorageStatusCell({backup}: {backup: BackupWith}) {
     const {openModal} = useBackupModal();
@@ -62,7 +64,8 @@ export function backupColumns(
     isAlreadyRestore: boolean,
     settings: Setting,
     database: DatabaseWith,
-    activeMember: MemberWithUser
+    activeMember: MemberWithUser,
+    onLabelSelect?: (filter: BackupLabelFilter) => void
 ): ColumnDef<BackupWith>[] {
 
     const isBackupOnly = backupOnly.some((type) => database.dbms === type)
@@ -136,6 +139,11 @@ export function backupColumns(
                     </div>
                 )
             },
+        },
+        {
+            accessorKey: "labels",
+            header: "Labels",
+            cell: ({row}) => <BackupLabelChips labels={row.original.labels} onSelect={onLabelSelect}/>,
         },
         {
             accessorKey: "fileSize",

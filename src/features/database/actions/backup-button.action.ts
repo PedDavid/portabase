@@ -7,18 +7,26 @@ import * as drizzleDb from "@/db";
 import {Backup} from "@/db/schema/07_database";
 import {withUpdatedAt} from "@/db/utils";
 import {userAction} from "@/lib/safe-actions/actions";
+import {BackupLabelsSchema} from "@/features/database/schemas/backup-labels.schema";
 
-export const backupButtonAction = userAction.inputSchema(z.string()).action(async ({parsedInput}): Promise<ServerActionResult<Backup>> => {
+export const backupButtonAction = userAction.inputSchema(
+    z.object({
+        databaseId: z.string(),
+        labels: BackupLabelsSchema.optional(),
+    })
+).action(async ({parsedInput}): Promise<ServerActionResult<Backup>> => {
+  const {databaseId, labels} = parsedInput;
 
 
-  console.log("Creating backup for databaseId:", parsedInput);
+  console.log("Creating backup for databaseId:", databaseId);
 
   try {
         const [createdBackup] = await db
             .insert(drizzleDb.schemas.backup)
             .values({
-                databaseId: parsedInput,
+                databaseId,
                 status: "waiting",
+                labels,
             })
             .returning();
 
@@ -27,7 +35,7 @@ export const backupButtonAction = userAction.inputSchema(z.string()).action(asyn
             value: createdBackup,
             actionSuccess: {
                 message: "Backup has been successfully created.",
-                messageParams: {databaseId: parsedInput},
+                messageParams: {databaseId},
             },
         };
     } catch (error) {
@@ -39,7 +47,7 @@ export const backupButtonAction = userAction.inputSchema(z.string()).action(asyn
                 message: "Failed to create backup.",
                 status: 500,
                 cause: error instanceof Error ? error.message : "Unknown error",
-                messageParams: {databaseId: parsedInput},
+                messageParams: {databaseId},
             },
         };
     }

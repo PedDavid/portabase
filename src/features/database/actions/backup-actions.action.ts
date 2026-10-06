@@ -9,6 +9,7 @@ import {and, eq, isNull, ne, sql} from "drizzle-orm";
 import * as drizzleDb from "@/db";
 import {Backup, Restoration} from "@/db/schema/07_database";
 import {withUpdatedAt} from "@/db/utils";
+import {BackupLabelsSchema} from "@/features/database/schemas/backup-labels.schema";
 
 
 export const downloadBackupAction = userAction.inputSchema(
@@ -369,6 +370,61 @@ export const deleteBackupAction = userAction
                     status: 500,
                     cause: error instanceof Error ? error.message : "Unknown error",
                     messageParams: {message: "Error deleting the backup"},
+                },
+            };
+        }
+    });
+
+
+// Replaces the whole label set: the edit dialog always submits every label.
+export const updateBackupLabelsAction = userAction
+    .inputSchema(
+        z.object({
+            backupId: z.string(),
+            databaseId: z.string(),
+            labels: BackupLabelsSchema,
+        })
+    )
+    .action(async ({parsedInput}): Promise<ServerActionResult<Backup>> => {
+        const {backupId, databaseId, labels} = parsedInput;
+
+        try {
+            const [updatedBackup] = await db
+                .update(drizzleDb.schemas.backup)
+                .set(withUpdatedAt({labels}))
+                .where(and(
+                    eq(drizzleDb.schemas.backup.id, backupId),
+                    eq(drizzleDb.schemas.backup.databaseId, databaseId),
+                    isNull(drizzleDb.schemas.backup.deletedAt)
+                ))
+                .returning();
+
+            if (!updatedBackup) {
+                return {
+                    success: false,
+                    actionError: {
+                        message: "Backup not found.",
+                        status: 404,
+                        messageParams: {backupId: backupId},
+                    },
+                };
+            }
+
+            return {
+                success: true,
+                value: updatedBackup,
+                actionSuccess: {
+                    message: "Backup labels updated successfully.",
+                },
+            };
+        } catch (error) {
+            return {
+                success: false,
+                actionError: {
+                    message: "Failed to update backup labels.",
+                    status: 500,
+                    cause: error instanceof Error ? error.message : "Unknown error",
+                    messageParams: {backupId: backupId},
                 },
             };
         }

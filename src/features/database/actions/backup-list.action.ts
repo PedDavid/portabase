@@ -8,11 +8,12 @@ import {
     FetchBackupsSchema,
     FetchRestorationsSchema,
 } from "@/features/database/actions/backup-list.schema";
+import { backupLabelFilterConditions } from "@/features/database/utils/backup-label-filters";
 
 export const fetchBackupsAction = userAction
     .inputSchema(FetchBackupsSchema)
     .action(async ({ parsedInput }) => {
-        const { databaseId, page, pageSize, filter } = parsedInput;
+        const { databaseId, page, pageSize, filter, labelFilters } = parsedInput;
         const offset = (page - 1) * pageSize;
 
         const deletedCondition =
@@ -25,6 +26,7 @@ export const fetchBackupsAction = userAction
         const where = and(
             eq(drizzleDb.schemas.backup.databaseId, databaseId),
             deletedCondition,
+            ...backupLabelFilterConditions(labelFilters ?? []),
         );
 
         const [totalResult] = await db
