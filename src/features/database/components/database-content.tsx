@@ -1,6 +1,7 @@
 "use client";
 import {DatabaseBackupActionsModal} from "@/features/database/components/backup-actions-modal";
-import {DatabaseTabs, backupOnly} from "@/features/database/components/database-tabs";
+import {DatabaseTabs} from "@/features/database/components/database-tabs";
+import {backupOnly} from "@/features/database/schemas/channels-policy.schema";
 import {Setting} from "@/db/schema/01_setting";
 import {DatabaseWith} from "@/db/schema/07_database";
 import {MemberWithUser} from "@/db/schema/03_organization";

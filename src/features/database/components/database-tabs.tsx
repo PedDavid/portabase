@@ -8,6 +8,7 @@ import {Setting} from "@/db/schema/01_setting";
 import {DatabaseBackupList} from "@/features/database/components/database-backup-list";
 import {DatabaseRestoreList} from "@/features/database/components/database-restore-list";
 import {MemberWithUser} from "@/db/schema/03_organization";
+import {backupOnly} from "@/features/database/schemas/channels-policy.schema";
 
 export type DatabaseTabsProps = {
     settings: Setting,
@@ -15,8 +16,6 @@ export type DatabaseTabsProps = {
     database: DatabaseWith,
     activeMember: MemberWithUser
 };
-
-export const backupOnly = ["redis", "valkey"];
 
 export const DatabaseTabs = (props: DatabaseTabsProps) => {
     const searchParams = useSearchParams();
