@@ -6,6 +6,7 @@ import { registerDatabaseRoutes } from "@/lib/api-v1/openapi/routes/databases";
 import { registerOrganizationRoutes } from "@/lib/api-v1/openapi/routes/organizations";
 import { registerProjectRoutes } from "@/lib/api-v1/openapi/routes/projects";
 import { registerPolicyRoutes } from "@/lib/api-v1/openapi/routes/policies";
+import { registerChannelRoutes } from "@/lib/api-v1/openapi/routes/channels";
 
 export function buildSpec() {
   const registry = new OpenAPIRegistry();
@@ -16,6 +17,7 @@ export function buildSpec() {
   registerOrganizationRoutes(registry);
   registerProjectRoutes(registry);
   registerPolicyRoutes(registry);
+  registerChannelRoutes(registry);
 
   return new OpenApiGeneratorV3(registry.definitions).generateDocument({
     openapi: "3.0.0",
@@ -33,6 +35,7 @@ export function buildSpec() {
       { name: "Organizations", description: "Organization management" },
       { name: "Projects", description: "Project management" },
       { name: "Policies", description: "Backup, storage and retention policies" },
+      { name: "Channels", description: "Storage and notification channels" },
     ],
   });
 }
