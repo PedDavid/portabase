@@ -1,10 +1,12 @@
 import {z} from "zod";
 
+export const PolicyEventKindSchema = z.enum([
+    'error_backup', 'error_restore', 'success_restore', 'success_backup', 'weekly_report', 'error_health_database', 'error_backup_missing', 'success_backup_recovered'
+]);
+
 export const PolicySchema = z.object({
     channelId: z.string().min(1, "Please select channel"),
-    eventKinds: z.array(z.enum([
-        'error_backup', 'error_restore', 'success_restore', 'success_backup', 'weekly_report', 'error_health_database', 'error_backup_missing', 'success_backup_recovered'
-    ]))
+    eventKinds: z.array(PolicyEventKindSchema)
         .optional(),
     enabled: z.boolean().default(true),
 });
@@ -16,6 +18,9 @@ export const PoliciesSchema = z.object({
 
 export type PoliciesType = z.infer<typeof PoliciesSchema>;
 export type PolicyType = z.infer<typeof PolicySchema>;
+
+/** Database engines that only support backups (no restore), so restore event kinds don't apply. */
+export const backupOnly = ["redis", "valkey"];
 
 export const EVENT_KIND_BACKUP_ONLY_OPTIONS = [
     {label: "Error Backup", value: "error_backup"},
