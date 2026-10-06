@@ -10,6 +10,7 @@ import {sendNotificationsBackupRestore} from "@/features/notifications/utils/not
 import {EventKind} from "@/features/notifications/types";
 import {logger} from "@/lib/logger";
 import {JobLogEntry} from "@/features/logs/types";
+import {SCHEDULED_BACKUP_LABELS} from "@/features/database/schemas/backup-labels.schema";
 
 const log = logger.child({module: "api/agent/backup/route"});
 
@@ -39,6 +40,8 @@ export const POST = withAgentCheck(async (request: Request, {params, agent}: {
 
         let backup: Backup | null | undefined = null;
 
+        // "automatic" is the agent's own cron schedule firing; "manual" picks up a backup
+        // that was already created as "waiting" (UI, API, MCP), which keeps its labels.
         if (method === "automatic") {
 
             const ongoingBackup = await db.query.backup.findFirst({
@@ -54,6 +57,7 @@ export const POST = withAgentCheck(async (request: Request, {params, agent}: {
                     .values({
                         status: 'ongoing',
                         databaseId: database.id,
+                        labels: SCHEDULED_BACKUP_LABELS,
                     })
                     .returning();
                 if (!backup) {

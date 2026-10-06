@@ -13,12 +13,14 @@ type ParseJsonBodyResult<T> =
 
 export async function parseJsonBody<TSchema extends z.ZodTypeAny>(
     req: Request,
-    schema: TSchema
+    schema: TSchema,
+    options: { allowEmpty?: boolean } = {}
 ): Promise<ParseJsonBodyResult<z.infer<TSchema>>> {
     let body: unknown;
 
     try {
-        body = await req.json();
+        const text = await req.text();
+        body = options.allowEmpty && text.trim() === "" ? {} : JSON.parse(text);
     } catch {
         return {
             ok: false,

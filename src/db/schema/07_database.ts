@@ -10,6 +10,7 @@ import {AlertPolicy, alertPolicy} from "@/db/schema/10_alert-policy";
 import {StoragePolicy, storagePolicy} from "@/db/schema/13_storage-policy";
 import {BackupStorageWith, backupStorage} from "@/db/schema/14_storage-backup";
 import {JobLog, jobLog} from "@/db/schema/17_job-log";
+import type {BackupLabels} from "@/features/database/schemas/backup-labels.schema";
 
 export const database = pgTable("databases", {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -40,6 +41,7 @@ export const backup = pgTable(
     {
         id: uuid("id").primaryKey().defaultRandom(),
         status: statusEnum("status").default("waiting").notNull(),
+        labels: jsonb("labels").$type<BackupLabels>().notNull().default({}),
         file: text("file"),
         fileSize: bigint("file_size", { mode: "number" }),
         durationMs: bigint("duration_ms", { mode: "number" }),
@@ -56,6 +58,7 @@ export const backup = pgTable(
         index("idx_backups_evolution")
             .on(table.createdAt)
             .where(sql`status = 'success' AND deleted_at IS NULL AND file_size IS NOT NULL`),
+        index("idx_backups_labels").using("gin", table.labels),
     ]
 );
 
@@ -136,7 +139,9 @@ export const retentionPolicyRelations = relations(retentionPolicy, ({one}) => ({
 export const databaseSchema = createSelectSchema(database);
 export type Database = z.infer<typeof databaseSchema>;
 
-export const backupSchema = createSelectSchema(backup);
+export const backupSchema = createSelectSchema(backup, {
+    labels: z.record(z.string(), z.string()),
+});
 export type Backup = z.infer<typeof backupSchema>;
 
 export const restorationSchema = createSelectSchema(restoration);

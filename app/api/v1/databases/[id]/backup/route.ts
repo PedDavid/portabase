@@ -3,14 +3,25 @@ import { withApiKey } from "@/lib/api-v1/middleware";
 import { db } from "@/db";
 import * as drizzleDb from "@/db";
 import {and, desc, eq, inArray, isNull} from "drizzle-orm";
+import { z } from "zod";
 import { logger } from "@/lib/logger";
 import { ApiKeyContext } from "@/lib/api-v1/types";
 import {requireDatabaseAccess} from "@/lib/api-v1/services/databases";
+import { parseJsonBody } from "@/lib/api-v1/validation/json-body";
+import {
+  BackupLabelsSchema,
+  parseBackupLabelFilters,
+} from "@/features/database/schemas/backup-labels.schema";
+import { backupLabelFilterConditions } from "@/features/database/utils/backup-label-filters";
 
 const log = logger.child({ module: "api/v1/databases/[id]/backup" });
 
+const CreateBackupSchema = z.object({
+  labels: BackupLabelsSchema.optional(),
+});
+
 export const GET = withApiKey(
-    async (_req: Request, ctx: ApiKeyContext, params?: Record<string, string>) => {
+    async (req: Request, ctx: ApiKeyContext, params?: Record<string, string>) => {
       try {
         const guard = await requireDatabaseAccess(params, ctx.user);
 
@@ -20,10 +31,20 @@ export const GET = withApiKey(
 
         const { id } = guard.data;
 
+        // ?label=key=value (exact match) and ?label=key (key exists), repeatable, ANDed.
+        const labelFilters = parseBackupLabelFilters(
+            new URL(req.url).searchParams.getAll("label")
+        );
+
+        if (!labelFilters.ok) {
+          return NextResponse.json({ error: labelFilters.error }, { status: 422 });
+        }
+
         const backups = await db.query.backup.findMany({
           where: and(
               eq(drizzleDb.schemas.backup.databaseId, id),
-              isNull(drizzleDb.schemas.backup.deletedAt)
+              isNull(drizzleDb.schemas.backup.deletedAt),
+              ...backupLabelFilterConditions(labelFilters.filters)
           ),
           orderBy: [desc(drizzleDb.schemas.backup.createdAt)],
         });
@@ -41,7 +62,7 @@ export const GET = withApiKey(
 );
 
 export const POST = withApiKey(
-    async (_req: Request, ctx: ApiKeyContext, params?: Record<string, string>) => {
+    async (req: Request, ctx: ApiKeyContext, params?: Record<string, string>) => {
       try {
         const guard = await requireDatabaseAccess(params, ctx.user);
 
@@ -50,6 +71,13 @@ export const POST = withApiKey(
         }
 
         const { id } = guard.data;
+
+        // The body is optional: a bare POST triggers a backup without labels.
+        const body = await parseJsonBody(req, CreateBackupSchema, { allowEmpty: true });
+
+        if (!body.ok) {
+          return body.response;
+        }
 
         const existingBackup = await db.query.backup.findFirst({
           where: and(
@@ -73,6 +101,7 @@ export const POST = withApiKey(
             .values({
               databaseId: id,
               status: "waiting",
+              labels: body.data.labels,
             })
             .returning();
 
