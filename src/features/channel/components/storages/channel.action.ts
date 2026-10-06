@@ -2,13 +2,14 @@
 
 import { z } from "zod";
 import { ServerActionResult } from "@/types/action-type";
-import * as drizzleDb from "@/db";
 import { userAction } from "@/lib/safe-actions/actions";
-import { db } from "@/db";
-import { and, eq } from "drizzle-orm";
-import { withUpdatedAt } from "@/db/utils";
 import { StorageChannelFormSchema } from "@/features/channel/schemas/channel-form.schema";
 import { StorageChannel } from "@/db/schema/12_storage-channel";
+import {
+  createStorageChannelService,
+  deleteStorageChannelService,
+  updateStorageChannelService,
+} from "@/features/channel/services/channel.service";
 
 export const addStorageChannelAction = userAction
   .inputSchema(
@@ -22,23 +23,10 @@ export const addStorageChannelAction = userAction
       const { organizationId, data } = parsedInput;
 
       try {
-        const [channel] = await db
-          .insert(drizzleDb.schemas.storageChannel)
-          .values({
-            provider: data.provider,
-            name: data.name,
-            config: data.config,
-            enabled: data.enabled ?? true,
-            organizationId: organizationId ?? null,
-          })
-          .returning();
-
-        if (organizationId) {
-          await db.insert(drizzleDb.schemas.organizationStorageChannel).values({
-            organizationId,
-            storageChannelId: channel.id,
-          });
-        }
+        const channel = await createStorageChannelService(
+          data,
+          organizationId ?? null,
+        );
 
         return {
           success: true,
@@ -78,27 +66,10 @@ export const removeStorageChannelAction = userAction
       const { organizationId, id } = parsedInput;
 
       try {
-        if (organizationId) {
-          await db
-            .delete(drizzleDb.schemas.organizationStorageChannel)
-            .where(
-              and(
-                eq(
-                  drizzleDb.schemas.organizationStorageChannel.organizationId,
-                  organizationId,
-                ),
-                eq(
-                  drizzleDb.schemas.organizationStorageChannel.storageChannelId,
-                  id,
-                ),
-              ),
-            );
-        }
-
-        const [deletedChannel] = await db
-          .delete(drizzleDb.schemas.storageChannel)
-          .where(eq(drizzleDb.schemas.storageChannel.id, id))
-          .returning();
+        const deletedChannel = await deleteStorageChannelService(
+          id,
+          organizationId,
+        );
 
         if (!deletedChannel) {
           return {
@@ -149,18 +120,7 @@ export const updateStorageChannelAction = userAction
       const { id, data } = parsedInput;
 
       try {
-        const [channel] = await db
-          .update(drizzleDb.schemas.storageChannel)
-          .set(
-            withUpdatedAt({
-              provider: data.provider,
-              name: data.name,
-              config: data.config,
-              enabled: data.enabled ?? true,
-            }),
-          )
-          .where(eq(drizzleDb.schemas.storageChannel.id, id))
-          .returning();
+        const channel = (await updateStorageChannelService(id, data))!;
 
         return {
           success: true,
