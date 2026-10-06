@@ -5,8 +5,9 @@ import {logger} from "@/lib/logger";
 import {ApiKeyContext} from "@/lib/api-v1/types";
 import {parseJsonBody} from "@/lib/api-v1/validation/json-body";
 import {backupScheduleInput} from "@/lib/api-v1/validation/cron";
-import {requireDatabaseAccess} from "@/lib/api-v1/services/databases";
+import {requireDatabaseAccess, stripDatabaseConfigForApi} from "@/lib/api-v1/services/databases";
 import {updateBackupPolicyService} from "@/features/database/actions/cron.action";
+import {Database} from "@/db/schema/07_database";
 
 const log = logger.child({module: "api/v1/databases/[id]/backup-policy"});
 
@@ -23,11 +24,11 @@ export const PUT = withApiKey(
             const body = await parseJsonBody(req, BackupPolicySchema);
             if (!body.ok) return body.response;
 
-            const updated = await updateBackupPolicyService(
+            const updated = (await updateBackupPolicyService(
                 {type: "database", id: guard.data.id},
                 body.data.schedule
-            );
-            return NextResponse.json({data: updated});
+            )) as Database | undefined;
+            return NextResponse.json({data: updated ? stripDatabaseConfigForApi(updated) : updated});
         } catch (error) {
             log.error({error}, "Error in PUT backup-policy");
             return NextResponse.json({error: "Internal server error"}, {status: 500});
