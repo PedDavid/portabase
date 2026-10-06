@@ -11,7 +11,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import {MoreHorizontal, Trash2, Download} from "lucide-react";
+import {MoreHorizontal, Trash2, Download, Tags} from "lucide-react";
 import {ReloadIcon} from "@radix-ui/react-icons";
 import {cn} from "@/lib/utils";
 import {MemberWithUser} from "@/db/schema/03_organization";
@@ -60,6 +60,9 @@ export function DatabaseActionsCell({backup, activeMember, isAlreadyRestore, isB
                             </DropdownMenuItem>
                         </>
                     ) : null}
+                    <DropdownMenuItem onSelect={() => openModal("labels", backup)}>
+                        <Tags/> Edit labels
+                    </DropdownMenuItem>
 
                     <DropdownMenuSeparator/>
                     <DropdownMenuItem onSelect={() => openModal("delete", backup)} className="text-red-600">

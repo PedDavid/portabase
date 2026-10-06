@@ -47,6 +47,9 @@ export type ButtonWithConfirmProps = {
     };
   };
   children?: ReactNode;
+  content?: ReactNode;
+  /** Called before confirming; returning false keeps the popover open and skips the confirm action. */
+  canConfirm?: () => boolean;
   onConfirm?: (e: React.MouseEvent) => void;
   onCancel?: (e: React.MouseEvent) => void;
   confirmButtonText?: string;
@@ -63,6 +66,7 @@ export const ButtonWithConfirm = (props: ButtonWithConfirmProps) => {
   const handleConfirm = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (props.canConfirm && !props.canConfirm()) return;
     if (isLegacy) {
       props.button?.confirm.onClick?.();
     } else {
@@ -145,6 +149,7 @@ export const ButtonWithConfirm = (props: ButtonWithConfirmProps) => {
             <h4 className="font-medium leading-none">{props.title}</h4>
             <p className="text-sm text-muted-foreground">{props.description}</p>
           </div>
+          {props.content}
           <div className="grid gap-2">
             <Button
               onClick={handleConfirm}

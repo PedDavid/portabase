@@ -5,7 +5,7 @@ import {ButtonWithLoading} from "@/components/common/button-with-loading";
 import {MoreHorizontal, Trash2} from "lucide-react";
 import {FilterItem, FiltersDropdown} from "@/components/common/table-filters";
 import {DataTable} from "@/components/common/data-table";
-import {useMemo, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {Backup, BackupWith, DatabaseWith} from "@/db/schema/07_database";
 import {Setting} from "@/db/schema/01_setting";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
@@ -16,6 +16,10 @@ import {ButtonWithConfirm} from "@/components/common/button-with-confirm";
 import {useServerDataTable} from "@/hooks/use-server-data-table";
 import {fetchBackupsAction} from "@/features/database/actions/backup-list.action";
 import type {FetchBackupsSchema} from "@/features/database/actions/backup-list.schema";
+import {BackupLabelFilterPills} from "@/features/database/components/backup-label-chips";
+import type {BackupLabelFilter} from "@/features/database/schemas/backup-labels.schema";
+
+const sameLabelFilter = (a: BackupLabelFilter, b: BackupLabelFilter) => a.key === b.key && a.value === b.value;
 
 type DatabaseBackupListProps = {
     isAlreadyRestore: boolean;
@@ -32,11 +36,19 @@ export const DatabaseBackupList = (props: DatabaseBackupListProps) => {
 
     const [selectedFilters, setSelectedFilters] = useState<FilterItem[]>([items[1]]);
     const [isActionsOpen, setIsActionsOpen] = useState(false);
+    const [labelFilters, setLabelFilters] = useState<BackupLabelFilter[]>([]);
     const queryClient = useQueryClient();
 
+    const addLabelFilter = useCallback((filter: BackupLabelFilter) => {
+        setLabelFilters((prev) => prev.some((f) => sameLabelFilter(f, filter)) ? prev : [...prev, filter]);
+    }, []);
+
+    const removeLabelFilter = (filter: BackupLabelFilter) =>
+        setLabelFilters((prev) => prev.filter((f) => !sameLabelFilter(f, filter)));
+
     const columns = useMemo(() => {
-        return backupColumns(props.isAlreadyRestore, props.settings, props.database, props.activeMember);
-    }, [props.isAlreadyRestore, props.activeMember.id, props.activeMember.role]);
+        return backupColumns(props.isAlreadyRestore, props.settings, props.database, props.activeMember, addLabelFilter);
+    }, [props.isAlreadyRestore, props.activeMember.id, props.activeMember.role, addLabelFilter]);
 
     const filter = useMemo<"available" | "deleted" | undefined>(() => {
         const values = selectedFilters.map((f) => f.value);
@@ -47,7 +59,7 @@ export const DatabaseBackupList = (props: DatabaseBackupListProps) => {
     const {data, tableProps, isFetching, isLoading} = useServerDataTable<BackupWith, FetchBackupsSchema>({
         fetchAction: fetchBackupsAction,
         queryKey: ["backups", props.database.id],
-        extraParams: {databaseId: props.database.id, filter},
+        extraParams: {databaseId: props.database.id, filter, labelFilters},
         initialPageSize: 20,
         refetchInterval: 4000,
     });
@@ -150,6 +162,11 @@ export const DatabaseBackupList = (props: DatabaseBackupListProps) => {
                                 selectedItems={selectedFilters}
                                 onSelect={handleSelectFilter}
                                 clearFilters={clearFilters}
+                            />
+                            <BackupLabelFilterPills
+                                filters={labelFilters}
+                                onRemove={removeLabelFilter}
+                                onClear={() => setLabelFilters([])}
                             />
                         </div>
                     </div>
